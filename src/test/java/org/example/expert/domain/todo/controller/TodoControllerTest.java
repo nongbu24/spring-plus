@@ -35,9 +35,10 @@ class TodoControllerTest {
         // given
         long todoId = 1L;
         String title = "title";
-        AuthUser authUser = new AuthUser(1L, "email", UserRole.USER);
+        String nickname = "nickname";
+        AuthUser authUser = new AuthUser(1L, "email", UserRole.USER, nickname);
         User user = User.fromAuthUser(authUser);
-        UserResponse userResponse = new UserResponse(user.getId(), user.getEmail());
+        UserResponse userResponse = new UserResponse(user.getId(), user.getEmail(), user.getNickname());
         TodoResponse response = new TodoResponse(
                 todoId,
                 title,
@@ -55,7 +56,8 @@ class TodoControllerTest {
         mockMvc.perform(get("/todos/{todoId}", todoId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(todoId))
-                .andExpect(jsonPath("$.title").value(title));
+                .andExpect(jsonPath("$.title").value(title))
+                .andExpect(jsonPath("$.user.nickname").value(nickname));
     }
 
     @Test

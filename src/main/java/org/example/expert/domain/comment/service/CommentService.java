@@ -22,7 +22,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CommentService {
-
     private final TodoRepository todoRepository;
     private final CommentRepository commentRepository;
 
@@ -43,7 +42,7 @@ public class CommentService {
         return new CommentSaveResponse(
                 savedComment.getId(),
                 savedComment.getContents(),
-                new UserResponse(user.getId(), user.getEmail())
+                new UserResponse(user.getId(), user.getEmail(), user.getNickname())
         );
     }
 
@@ -53,13 +52,16 @@ public class CommentService {
         List<CommentResponse> dtoList = new ArrayList<>();
         for (Comment comment : commentList) {
             User user = comment.getUser();
+
             CommentResponse dto = new CommentResponse(
                     comment.getId(),
                     comment.getContents(),
-                    new UserResponse(user.getId(), user.getEmail())
+                    new UserResponse(user.getId(), user.getEmail(), user.getNickname())
             );
+
             dtoList.add(dto);
         }
+
         return dtoList;
     }
 }
