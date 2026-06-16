@@ -17,6 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -48,10 +51,17 @@ public class TodoService {
         );
     }
 
-    public Page<TodoResponse> getTodos(int page, int size) {
+    public Page<TodoResponse> getTodos(int page, int size, String weather, LocalDate startDate, LocalDate endDate) {
         Pageable pageable = PageRequest.of(page - 1, size);
 
-        Page<Todo> todos = todoRepository.findAllByOrderByModifiedAtDesc(pageable);
+        validateSearchPeriod(startDate, endDate);
+
+        String weatherCondition = normalizeWeather(weather);
+        // LocalDate는 시간이 없기 때문에 시작일 00:00:00부터 종료일 다음 날 00:00:00 전까지 조회합니다.
+        LocalDateTime startDateTime = startDate == null ? null : startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate == null ? null : endDate.plusDays(1).atStartOfDay();
+
+        Page<Todo> todos = todoRepository.searchTodos(weatherCondition, startDateTime, endDateTime, pageable);
 
         return todos.map(todo -> new TodoResponse(
                 todo.getId(),
@@ -62,6 +72,19 @@ public class TodoService {
                 todo.getCreatedAt(),
                 todo.getModifiedAt()
         ));
+    }
+
+    private String normalizeWeather(String weather) {
+        if (weather == null || weather.isBlank()) {
+            return null;
+        }
+        return weather.trim();
+    }
+
+    private void validateSearchPeriod(LocalDate startDate, LocalDate endDate) {
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new InvalidRequestException("시작 시간은 끝 시간보다 늦을 수 없습니다.");
+        }
     }
 
     public TodoResponse getTodo(long todoId) {

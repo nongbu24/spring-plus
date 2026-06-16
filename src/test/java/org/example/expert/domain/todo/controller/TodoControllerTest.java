@@ -11,11 +11,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,6 +35,117 @@ class TodoControllerTest {
 
     @MockBean
     private TodoService todoService;
+
+    @Test
+    void todo_목록_조회_시_검색_조건_없이_조회할_수_있다() throws Exception {
+        // given
+        when(todoService.getTodos(1, 10, null, null, null))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        // when & then
+        mockMvc.perform(get("/todos"))
+                .andExpect(status().isOk());
+
+        verify(todoService).getTodos(
+                eq(1),
+                eq(10),
+                isNull(),
+                isNull(),
+                isNull()
+        );
+    }
+
+    @Test
+    void todo_목록_조회_시_날씨만으로_검색할_수_있다() throws Exception {
+        // given
+        String weather = "Sunny";
+
+        when(todoService.getTodos(1, 10, weather, null, null))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        // when & then
+        mockMvc.perform(get("/todos")
+                        .param("weather", weather))
+                .andExpect(status().isOk());
+
+        verify(todoService).getTodos(
+                eq(1),
+                eq(10),
+                eq(weather),
+                isNull(),
+                isNull()
+        );
+    }
+
+    @Test
+    void todo_목록_조회_시_수정일_시작일만으로_검색할_수_있다() throws Exception {
+        // given
+        LocalDate startDate = LocalDate.of(2026, 6, 1);
+
+        when(todoService.getTodos(1, 10, null, startDate, null))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        // when & then
+        mockMvc.perform(get("/todos")
+                        .param("startDate", "2026-06-01"))
+                .andExpect(status().isOk());
+
+        verify(todoService).getTodos(
+                eq(1),
+                eq(10),
+                isNull(),
+                eq(startDate),
+                isNull()
+        );
+    }
+
+    @Test
+    void todo_목록_조회_시_수정일_종료일만으로_검색할_수_있다() throws Exception {
+        // given
+        LocalDate endDate = LocalDate.of(2026, 6, 16);
+
+        when(todoService.getTodos(1, 10, null, null, endDate))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        // when & then
+        mockMvc.perform(get("/todos")
+                        .param("endDate", "2026-06-16"))
+                .andExpect(status().isOk());
+
+        verify(todoService).getTodos(
+                eq(1),
+                eq(10),
+                isNull(),
+                isNull(),
+                eq(endDate)
+        );
+    }
+
+    @Test
+    void todo_목록_조회_시_날씨와_수정일_기간으로_검색할_수_있다() throws Exception {
+        // given
+        String weather = "Sunny";
+        LocalDate startDate = LocalDate.of(2026, 6, 1);
+        LocalDate endDate = LocalDate.of(2026, 6, 16);
+
+        when(todoService.getTodos(1, 10, weather, startDate, endDate))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        // when & then
+        mockMvc.perform(get("/todos")
+                        .param("weather", weather)
+                        .param("startDate", "2026-06-01")
+                        .param("endDate", "2026-06-16"))
+                .andExpect(status().isOk());
+
+        verify(todoService).getTodos(
+                eq(1),
+                eq(10),
+                eq(weather),
+                eq(startDate),
+                eq(endDate)
+        );
+    }
 
     @Test
     void todo_단건_조회에_성공한다() throws Exception {
